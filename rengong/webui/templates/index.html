@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大模型本地部署与知识图谱融合应用</title>
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        /* 头部样式 */
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* 主体容器 */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        /* 标签页样式 */
+        .tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+        
+        .tab-button.active {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .tab-button:hover:not(.active) {
+            background-color: #f0f0f0;
+        }
+        
+        /* 标签内容样式 */
+        .tab-content {
+            background-color: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* 表单元素样式 */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+        }
+        
+        textarea {
+            min-height: 120px;
+        }
+        
+        /* 按钮样式 */
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        /* 复选框样式 */
+        .checkbox-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* 语言选择器 */
+        .language-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        select {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            flex: 1;
+        }
+        
+        /* 结果显示样式 */
+        .result {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .result h3 {
+            margin-bottom: 0.5rem;
+            color: #3498db;
+        }
+        
+        /* 加载指示器 */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 1rem;
+            color: #3498db;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .language-selector {
+                flex-direction: column;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>大模型本地部署与知识图谱融合应用</h1>
+        <p>基于 DeepSeek 大模型与 Seq2Seq+Attention 的智能交互与翻译知识图谱构建</p>
+    </header>
+    
+    <div class="container">
+        <!-- 标签页 -->
+        <div class="tabs">
+            <button class="tab-button active" data-tab="translation">翻译功能</button>
+            <button class="tab-button" data-tab="chat">智能对话</button>
+            <button class="tab-button" data-tab="explain">翻译解释</button>
+            <button class="tab-button" data-tab="related">相关短语</button>
+        </div>
+        
+        <!-- 翻译功能标签 -->
+        <div id="translation" class="tab-content active">
+            <h2>智能翻译</h2>
+            <form id="translation-form">
+                <div class="language-selector">
+                    <div>
+                        <label for="source-lang">源语言</label>
+                        <select id="source-lang">
+                            <option value="fr">法语</option>
+                            <option value="zh">中文</option>
+                            <option value="en">英语</option>
+                            <option value="de">德语</option>
+                            <option value="es">西班牙语</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="target-lang">目标语言</label>
+                        <select id="target-lang">
+                            <option value="en">英语</option>
+                            <option value="zh">中文</option>
+                            <option value="fr">法语</option>
+                            <option value="de">德语</option>
+                            <option value="es">西班牙语</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="translation-text">输入文本</label>
+                    <textarea id="translation-text" placeholder="请输入要翻译的文本..."></textarea>
+                </div>
+                
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="use-kg" checked>
+                        <label for="use-kg">使用知识图谱</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="use-llm" checked>
+                        <label for="use-llm">使用大语言模型</label>
+                    </div>
+                </div>
+                
+                <button type="submit">翻译</button>
+                <div class="loading" id="translation-loading">正在翻译...</div>
+            </form>
+            
+            <div id="translation-result" class="result" style="display: none;">
+                <h3>翻译结果</h3>
+                <div id="translation-output"></div>
+            </div>
+        </div>
+        
+        <!-- 智能对话标签 -->
+        <div id="chat" class="tab-content">
+            <h2>智能对话</h2>
+            <form id="chat-form">
+                <div class="language-selector">
+                    <div>
+                        <label for="chat-source-lang">输入语言</label>
+                        <select id="chat-source-lang">
+                            <option value="zh" selected>中文</option>
+                            <option value="en">英语</option>
+                            <option value="fr">法语</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="chat-target-lang">输出语言</label>
+                        <select id="chat-target-lang">
+                            <option value="zh" selected>中文</option>
+                            <option value="en">英语</option>
+                            <option value="fr">法语</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="chat-message">输入消息</label>
+                    <textarea id="chat-message" placeholder="请输入对话内容..."></textarea>
+                </div>
+                
+                <button type="submit">发送</button>
+                <div class="loading" id="chat-loading">正在生成回复...</div>
+            </form>
+            
+            <div id="chat-result" class="result" style="display: none;">
+                <h3>AI回复</h3>
+                <div id="chat-output"></div>
+            </div>
+        </div>
+        
+        <!-- 翻译解释标签 -->
+        <div id="explain" class="tab-content">
+            <h2>翻译解释</h2>
+            <form id="explain-form">
+                <div class="language-selector">
+                    <div>
+                        <label for="explain-source-lang">源语言</label>
+                        <select id="explain-source-lang">
+                            <option value="fr">法语</option>
+                            <option value="zh">中文</option>
+                            <option value="en">英语</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="explain-target-lang">目标语言</label>
+                        <select id="explain-target-lang">
+                            <option value="en">英语</option>
+                            <option value="zh">中文</option>
+                            <option value="fr">法语</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="explain-text">输入文本</label>
+                    <textarea id="explain-text" placeholder="请输入要解释的文本..."></textarea>
+                </div>
+                
+                <button type="submit">解释</button>
+                <div class="loading" id="explain-loading">正在生成解释...</div>
+            </form>
+            
+            <div id="explain-result" class="result" style="display: none;">
+                <h3>解释结果</h3>
+                <div id="explain-output"></div>
+            </div>
+        </div>
+        
+        <!-- 相关短语标签 -->
+        <div id="related" class="tab-content">
+            <h2>相关短语</h2>
+            <form id="related-form">
+                <div class="form-group">
+                    <label for="related-phrase">输入短语</label>
+                    <input type="text" id="related-phrase" placeholder="请输入要查询的短语...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="related-language">语言</label>
+                    <select id="related-language">
+                        <option value="en">英语</option>
+                        <option value="zh">中文</option>
+                        <option value="fr">法语</option>
+                    </select>
+                </div>
+                
+                <button type="submit">查询</button>
+                <div class="loading" id="related-loading">正在查询...</div>
+            </form>
+            
+            <div id="related-result" class="result" style="display: none;">
+                <h3>相关短语</h3>
+                <ul id="related-output"></ul>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 标签页切换功能
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                // 移除所有活动状态
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                
+                // 添加当前活动状态
+                button.classList.add('active');
+                const tabId = button.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        // 翻译功能
+        document.getElementById('translation-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const text = document.getElementById('translation-text').value;
+            const sourceLang = document.getElementById('source-lang').value;
+            const targetLang = document.getElementById('target-lang').value;
+            const useKg = document.getElementById('use-kg').checked;
+            const useLlm = document.getElementById('use-llm').checked;
+            
+            if (!text.trim()) {
+                alert('请输入要翻译的文本');
+                return;
+            }
+            
+            // 显示加载状态
+            const loading = document.getElementById('translation-loading');
+            const resultDiv = document.getElementById('translation-result');
+            const outputDiv = document.getElementById('translation-output');
+            
+            loading.style.display = 'block';
+            resultDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        source_lang: sourceLang,
+                        target_lang: targetLang,
+                        use_kg: useKg,
+                        use_llm: useLlm
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    outputDiv.textContent = data.result;
+                    resultDiv.style.display = 'block';
+                } else {
+                    alert('翻译失败: ' + data.error);
+                }
+            } catch (error) {
+                alert('翻译过程中发生错误: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+        
+        // 对话功能
+        document.getElementById('chat-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const message = document.getElementById('chat-message').value;
+            const sourceLang = document.getElementById('chat-source-lang').value;
+            const targetLang = document.getElementById('chat-target-lang').value;
+            
+            if (!message.trim()) {
+                alert('请输入对话内容');
+                return;
+            }
+            
+            // 显示加载状态
+            const loading = document.getElementById('chat-loading');
+            const resultDiv = document.getElementById('chat-result');
+            const outputDiv = document.getElementById('chat-output');
+            
+            loading.style.display = 'block';
+            resultDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        source_lang: sourceLang,
+                        target_lang: targetLang
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    outputDiv.textContent = data.result;
+                    resultDiv.style.display = 'block';
+                } else {
+                    alert('对话失败: ' + data.error);
+                }
+            } catch (error) {
+                alert('对话过程中发生错误: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+        
+        // 翻译解释功能
+        document.getElementById('explain-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const text = document.getElementById('explain-text').value;
+            const sourceLang = document.getElementById('explain-source-lang').value;
+            const targetLang = document.getElementById('explain-target-lang').value;
+            
+            if (!text.trim()) {
+                alert('请输入要解释的文本');
+                return;
+            }
+            
+            // 显示加载状态
+            const loading = document.getElementById('explain-loading');
+            const resultDiv = document.getElementById('explain-result');
+            const outputDiv = document.getElementById('explain-output');
+            
+            loading.style.display = 'block';
+            resultDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/explain', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        source_lang: sourceLang,
+                        target_lang: targetLang
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    outputDiv.textContent = data.result;
+                    resultDiv.style.display = 'block';
+                } else {
+                    alert('解释失败: ' + data.error);
+                }
+            } catch (error) {
+                alert('解释过程中发生错误: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+        
+        // 相关短语功能
+        document.getElementById('related-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const phrase = document.getElementById('related-phrase').value;
+            const language = document.getElementById('related-language').value;
+            
+            if (!phrase.trim()) {
+                alert('请输入要查询的短语');
+                return;
+            }
+            
+            // 显示加载状态
+            const loading = document.getElementById('related-loading');
+            const resultDiv = document.getElementById('related-result');
+            const outputList = document.getElementById('related-output');
+            
+            loading.style.display = 'block';
+            resultDiv.style.display = 'none';
+            outputList.innerHTML = '';
+            
+            try {
+                const response = await fetch('/related_phrases', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        phrase: phrase,
+                        language: language
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.result.length > 0) {
+                        data.result.forEach(relatedPhrase => {
+                            const li = document.createElement('li');
+                            li.textContent = relatedPhrase;
+                            outputList.appendChild(li);
+                        });
+                        resultDiv.style.display = 'block';
+                    } else {
+                        alert('未找到相关短语');
+                    }
+                } else {
+                    alert('查询失败: ' + data.error);
+                }
+            } catch (error) {
+                alert('查询过程中发生错误: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
