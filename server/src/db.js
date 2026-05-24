@@ -2,6 +2,7 @@ import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.join(__dirname, "..", "data.db");
@@ -333,6 +334,22 @@ export function removeTopicLike(topicId, userId) {
 // ─── Seeding check ────────────────────────────────────────
 export function isSeeded() {
   return db.prepare("SELECT 1 FROM articles LIMIT 1").get();
+}
+
+export function seedUsers() {
+  const adminExists = db.prepare("SELECT 1 FROM users WHERE username = ?").get("admin");
+  if (adminExists) return;
+
+  const now = new Date().toISOString();
+  const salt = bcrypt.genSaltSync(10);
+
+  db.prepare(
+    "INSERT INTO users (_id, username, password, nickname, role, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+  ).run(crypto.randomUUID(), "admin", bcrypt.hashSync("Admin@2026", salt), "管理员", "admin", now);
+
+  db.prepare(
+    "INSERT INTO users (_id, username, password, nickname, role, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+  ).run(crypto.randomUUID(), "user", bcrypt.hashSync("User@2026", salt), "普通用户", "user", now);
 }
 
 export default db;

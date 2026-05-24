@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-import { initDatabase } from "./db.js";
+import { initDatabase, seedUsers } from "./db.js";
 import authRoutes from "./routes/auth.js";
 import articleRoutes from "./routes/articles.js";
 import commentRoutes from "./routes/comments.js";
@@ -18,6 +18,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Initialize database
 initDatabase();
+seedUsers();
 
 const app = express();
 const PORT = process.env.PORT || 3000;

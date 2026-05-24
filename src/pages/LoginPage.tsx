@@ -195,17 +195,6 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* Demo accounts */}
-          <div className="mt-8 p-4 bg-ink-100 border border-ink-200 rounded-xl">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-ink-500 mb-2">
-              <i className="fa-regular fa-info-circle mr-1" />
-              演示账号
-            </p>
-            <div className="font-mono text-[11px] text-ink-500 space-y-1">
-              <p>管理员: admin / Admin@2026</p>
-              <p>普通用户: user / User@2026</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
